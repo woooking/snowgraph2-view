@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { ChangeEvent } from 'react';
-import { CREATE_GRAPH, GET_GRAPHS } from '../../config';
+import { WebsocketProps, withWebSocket } from '../../components/websocket/WebSocketWrapper';
+import { CREATE_GRAPH } from '../../config';
 import { PluginConfig } from '../../model/PluginConfig';
 import { SnowGraph } from '../../model/SnowGraph';
 import { post } from '../../util';
 
-interface IndexPageState {
-  graphs: SnowGraph[];
+interface CreateGraphPageState {
+  currentStep: number;
   name: string;
   src: string;
   dest: string;
@@ -33,46 +34,22 @@ const predefinedPlugins: { [k: string]: PluginConfig } = {
   codeTokenizer, javaCodeExtractor, jiraExtractor
 };
 
-class IndexPage extends React.Component<{}, IndexPageState> {
-  public readonly state: IndexPageState = {
+class CreateGraphPage extends React.Component<WebsocketProps, CreateGraphPageState> {
+  public readonly state: CreateGraphPageState = {
     creatingGraph: false,
+    currentStep: 0,
     dest: '/home/woooking/lab/neo4j/databases/snow-graph',
-    graphs: [],
     name: 'nutch',
     plugins: [],
     src: '/home/woooking/lab/nutch',
   };
 
-  public componentDidMount() {
-    fetch(GET_GRAPHS)
-      .then(data => data.json())
-      .then((data: SnowGraph[]) => {
-        this.setState({
-          graphs: data
-        });
-      });
-  }
-
   public render() {
-    const {graphs} = this.state;
-
+    const {currentStep} = this.state;
     return (
       <div>
-        {graphs.map(graph =>
-          <div key={graph.destination}>
-            <div>
-              {graph.name}/{graph.destination}
-            </div>
-            {graph.pluginConfigs.map(config =>
-              <div key={config.path}>
-                {config.path}
-                {config.args.map((arg, index) => <p key={index}>{arg}</p>)}
-              </div>
-            )}
-          </div>
-        )}
-        <div>
-          <h4>Build New Graph:</h4>
+        {currentStep === 0 && <div>
+          <h4>Enter Basic Info</h4>
           <form>
             <div>
               <label htmlFor="name">Name: </label>
@@ -111,6 +88,8 @@ class IndexPage extends React.Component<{}, IndexPageState> {
             </div>
           </form>
         </div>
+        }
+
       </div>
     );
   }
@@ -135,7 +114,6 @@ class IndexPage extends React.Component<{}, IndexPageState> {
       .then(data =>
         this.setState(prevState => ({
           creatingGraph: false,
-          graphs: [...prevState.graphs, data],
         })))
       .catch(() => this.setState({creatingGraph: false}));
   };
@@ -147,4 +125,4 @@ class IndexPage extends React.Component<{}, IndexPageState> {
   };
 }
 
-export default IndexPage;
+export default withWebSocket(CreateGraphPage);
